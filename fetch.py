@@ -23,7 +23,7 @@ headers = {
 }
 
 # Fetching a specific ticket when we know the magic-number
-def fetch(_id, magic_num) :
+def fetch(_id, magic_num, secs=5) :
     full_id = int(_id*10 + magic_num)
     payload = {'clientcode' : '02',
                'requestType' : 'submit',
@@ -55,7 +55,8 @@ def fetch(_id, magic_num) :
             "resolved" : True
         }
     elif "unavailable" in soup.find_all("li", attrs={'class':'error'})[0].text.strip() :
-        sys.exit(1)
+        time.sleep(secs)
+        return fetch(_id, magic_num, secs*2) 
     else :
         return False, None
 
