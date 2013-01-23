@@ -20,6 +20,8 @@ class Master :
         self.min_id = self.db.find().sort([('_id', 1)]).limit(1)[0]['_id'] - 1
         self.max_id = self.db.find().sort([('_id', -1)]).limit(1)[0]['_id'] + 1
         self.mins = True
+        print "%s: %d" % ("Next max", self.max_id)
+        print "%s: %d" % ("Next min", self.min_id)
 
     def insert(self, data) :
         print "%s %s" % ("Inserting", data['_id'])
