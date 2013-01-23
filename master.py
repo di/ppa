@@ -61,6 +61,12 @@ class Master :
                 self.max_id = self.max_id + 1
             return self.max_id
 
+    def freq(self):
+        f = dict()
+        for i in range(0,10):
+            f[i] = self.db.find({'magic-num':i}).count()
+        print sorted(f, key=f.__getitem__, reverse=True)
+
 @route('/new', method='GET')
 def get_new_id():
     next_id = m.next_id()
@@ -74,4 +80,5 @@ def insert():
 
 if __name__ == '__main__':
     m = Master()
+    m.freq()
     run(host='129.25.163.19', port=80)

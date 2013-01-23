@@ -63,7 +63,7 @@ def fetch(_id, magic_num, secs=5) :
 
 # Fetching a ticket when we don't know the magic-number
 def fetch_range(_id) :
-    for magic_num in range(0,10) :
+    for magic_num in [9, 0, 1, 4, 8, 3, 7, 5, 6, 2] :
         valid, r = fetch(_id, magic_num)
         if valid :
             return r
