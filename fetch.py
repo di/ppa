@@ -55,6 +55,7 @@ def fetch(_id, magic_num, secs=5) :
             "resolved" : True
         }
     elif "unavailable" in soup.find_all("li", attrs={'class':'error'})[0].text.strip() :
+        print "%s %d %s" % ("Oops, we brought it down, backing off for", secs, "seconds...")
         time.sleep(secs)
         return fetch(_id, magic_num, secs*2) 
     else :
