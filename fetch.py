@@ -2,6 +2,7 @@
 
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 url = "https://wmq.etimspayments.com/pbw/onlineDisputeAction.doh"
 headers = {
@@ -42,23 +43,24 @@ def fetch_range(_id) :
     for magic_num in range(0,10) :
         valid, tr = fetch(_id, magic_num)
         if valid :
+            time = tr.table.contents[3].contents[9].text.strip()
+            issueDate = tr.table.contents[3].contents[3].text.strip()
+            issueTime = issueDate + " " + time
             return {
-            "_id" : _id,
-            "magic-num" : magic_num,
-            "plate" : tr.find("input", attrs={'name':'plate'})['value'],
-            "violationCode" : tr.find("input", attrs={'name':'violationCode'})['value'],
-            "location" : tr.table.contents[1].contents[9].text.strip(),
-            "issueDate" : tr.table.contents[3].contents[3].text.strip(),
-            "time" : tr.table.contents[3].contents[9].text.strip(),
-            "violation" : tr.table.contents[5].contents[3].text.strip(),
-            "meterNumber" : tr.table.contents[7].contents[3].text.strip(),
-            "resolved" : False
+                "_id" : _id,
+                "magic-num" : magic_num,
+                "plate" : tr.find("input", attrs={'name':'plate'})['value'],
+                "violationCode" : tr.find("input", attrs={'name':'violationCode'})['value'],
+                "location" : tr.table.contents[1].contents[9].text.strip(),
+                "violation" : tr.table.contents[5].contents[3].text.strip(),
+                "meterNumber" : tr.table.contents[7].contents[3].text.strip(),
+                "time" : time,
+                "issueDate" : issueDate,
+                "issueTime" : datetime.strptime(issueTime, "%m/%d/%Y %I:%M%p"),
+                "resolved" : False
             }
     else :
         return {
             "_id" : _id,
             "resolved" : True
         }
-
-print fetch_range(58536292) #6
-print fetch_range(58536293) #resolved
