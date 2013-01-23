@@ -2,6 +2,7 @@
 
 import requests
 import time
+import sys
 from bs4 import BeautifulSoup
 
 url = "https://wmq.etimspayments.com/pbw/onlineDisputeAction.doh"
@@ -53,6 +54,8 @@ def fetch(_id, magic_num) :
             "magic-num" : magic_num,
             "resolved" : True
         }
+    elif "unavailable" in soup.find_all("li", attrs={'class':'error'})[0].text.strip() :
+        sys.exit(1)
     else :
         return False, None
 
