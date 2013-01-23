@@ -20,26 +20,45 @@ headers = {
     "User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.52 Safari/537.17",
 }
 
-def fetch(t_id) :
+# Fetching a specific ticket when we know the magic-number
+def fetch(_id, magic_num) :
+    full_id = str(_id) + str(magic_num)
     payload = {'clientcode' : '02',
                'requestType' : 'submit',
                'clientAccount' : '5',
                'actionType' : 'I',
-               'ticket' : t_id,
+               'ticket' : full_id,
                'submit' : 'Submit'}
     r = requests.post(url, data=payload, headers=headers)
-    return r
-
-#r = fetch("585362916")
-ticket = "585362916"
-#headers["Cookie"] = r.headers["set-cookie"]
-for i in range(585362916, 585363016):
-    r = fetch(str(i))
     soup = BeautifulSoup(r.content)
-    odf = soup.find_all("form", attrs={'name':'onlineDisputeForm'})[0]
-    tr = odf.table.findChildren()
-    if tr[0].findChildren()[1].text.strip() == str(i):
-        print "%d,%s" % (i,"true")
+    tr = soup.find_all("form", attrs={'name':'onlineDisputeForm'})[0]
+    if tr.table.contents[1].contents[3].text.strip() == full_id :
+        return True, tr
     else :
-        print "%d,%s" % (i,"false")
+        return False, None
 
+# Fetching a ticket when we don't know the magic-number
+def fetch_range(_id) :
+    for magic_num in range(0,10) :
+        valid, tr = fetch(_id, magic_num)
+        if valid :
+            return {
+            "_id" : _id,
+            "magic-num" : magic_num,
+            "plate" : tr.find("input", attrs={'name':'plate'})['value'],
+            "violationCode" : tr.find("input", attrs={'name':'violationCode'})['value'],
+            "location" : tr.table.contents[1].contents[9].text.strip(),
+            "issueDate" : tr.table.contents[3].contents[3].text.strip(),
+            "time" : tr.table.contents[3].contents[9].text.strip(),
+            "violation" : tr.table.contents[5].contents[3].text.strip(),
+            "meterNumber" : tr.table.contents[7].contents[3].text.strip(),
+            "resolved" : False
+            }
+    else :
+        return {
+            "_id" : _id,
+            "resolved" : True
+        }
+
+print fetch_range(58536292) #6
+print fetch_range(58536293) #resolved
