@@ -32,7 +32,6 @@ def fetch(_id, magic_num) :
     r = requests.post(url, data=payload, headers=headers)
     soup = BeautifulSoup(r.content)
     tr = soup.find_all("form", attrs={'name':'onlineDisputeForm'})[0]
-    err = soup.find_all("li", attrs={'class':'error'})[0].text.strip()
     if str(tr.table.contents[1].contents[3].text.strip()) == str(full_id) :
         return True, {
             "_id" : int(_id),
@@ -46,7 +45,7 @@ def fetch(_id, magic_num) :
             "issueDate" : tr.table.contents[3].contents[3].text.strip(),
             "resolved" : False
         }
-    elif "$0.00" in err :
+    elif "$0.00" in soup.find_all("li", attrs={'class':'error'})[0].text.strip() :
         return True, {
             "_id" : int(_id),
             "magic-num" : magic_num,
