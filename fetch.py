@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import requests
+import time
 from bs4 import BeautifulSoup
 
 url = "https://wmq.etimspayments.com/pbw/onlineDisputeAction.doh"
@@ -30,6 +31,7 @@ def fetch(_id, magic_num) :
                'ticket' : full_id,
                'submit' : 'Submit'}
     r = requests.post(url, data=payload, headers=headers)
+    time.sleep(1) # sleep for a bit
     soup = BeautifulSoup(r.content)
     tr = soup.find_all("form", attrs={'name':'onlineDisputeForm'})[0]
     if str(tr.table.contents[1].contents[3].text.strip()) == str(full_id) :
