@@ -2,6 +2,7 @@
 
 import fetch
 import requests
+import time
 
 master = "http://129.25.163.19"
 
@@ -17,3 +18,4 @@ while True :
     data = fetch.fetch_range(_id)
     print data
     insert(data)
+    time.sleep(1)

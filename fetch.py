@@ -32,30 +32,37 @@ def fetch(_id, magic_num) :
     r = requests.post(url, data=payload, headers=headers)
     soup = BeautifulSoup(r.content)
     tr = soup.find_all("form", attrs={'name':'onlineDisputeForm'})[0]
+    err = soup.find_all("li", attrs={'class':'error'})[0].text.strip()
     if str(tr.table.contents[1].contents[3].text.strip()) == str(full_id) :
-        return True, tr
+        return True, {
+            "_id" : int(_id),
+            "magic-num" : magic_num,
+            "plate" : tr.find("input", attrs={'name':'plate'})['value'],
+            "violationCode" : tr.find("input", attrs={'name':'violationCode'})['value'],
+            "location" : tr.table.contents[1].contents[9].text.strip(),
+            "violation" : tr.table.contents[5].contents[3].text.strip(),
+            "meterNumber" : tr.table.contents[7].contents[3].text.strip(),
+            "time" : tr.table.contents[3].contents[9].text.strip(),
+            "issueDate" : tr.table.contents[3].contents[3].text.strip(),
+            "resolved" : False
+        }
+    elif "$0.00" in err :
+        return True, {
+            "_id" : int(_id),
+            "magic-num" : magic_num,
+            "resolved" : True
+        }
     else :
         return False, None
 
 # Fetching a ticket when we don't know the magic-number
 def fetch_range(_id) :
     for magic_num in range(0,10) :
-        valid, tr = fetch(_id, magic_num)
+        valid, r = fetch(_id, magic_num)
         if valid :
-            return {
-                "_id" : int(_id),
-                "magic-num" : magic_num,
-                "plate" : tr.find("input", attrs={'name':'plate'})['value'],
-                "violationCode" : tr.find("input", attrs={'name':'violationCode'})['value'],
-                "location" : tr.table.contents[1].contents[9].text.strip(),
-                "violation" : tr.table.contents[5].contents[3].text.strip(),
-                "meterNumber" : tr.table.contents[7].contents[3].text.strip(),
-                "time" : tr.table.contents[3].contents[9].text.strip(),
-                "issueDate" : tr.table.contents[3].contents[3].text.strip(),
-                "resolved" : False
-            }
+            return r
     else :
         return {
             "_id" : int(_id),
-            "resolved" : True
+            "missing" : True
         }
