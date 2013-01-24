@@ -20,8 +20,7 @@ class Master :
         #self.min_id = self.db.find().sort([('_id', 1)]).limit(1)[0]['_id'] - 1
         #self.max_id = self.db.find().sort([('_id', -1)]).limit(1)[0]['_id'] + 1
         self.min_id = 58536288
-        self.max_id = 58536288
-        #self.max_id = 58536803 # max as of 1/23 6PM
+        self.max_id = 58536803 # max as of 1/23 6PM
         self.mins = True
         print "%s: %d" % ("Next max", self.max_id)
         print "%s: %d" % ("Next min", self.min_id)
@@ -51,12 +50,10 @@ class Master :
 
     def next_id(self):
         if self.mins:
-            self.mins = False
             while m.db.find({'_id':self.min_id}).count() :
                 self.min_id = self.min_id - 1
             return self.min_id
         else:
-            self.mins = True
             while m.db.find({'_id':self.max_id}).count() :
                 self.max_id = self.max_id + 1
             return self.max_id
