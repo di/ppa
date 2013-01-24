@@ -64,11 +64,22 @@ class Master :
             f[i] = self.db.find({'magic-num':i}).count()
         print sorted(f, key=f.__getitem__, reverse=True)
 
+    def has_following(self, next_id) :
+        return self.db.find({'_id':next_id+1, 'placeholder':{'$exists':False}}).count()
+
+    def get_lmn(self, next_id) :
+        return self.db.find({'_id':next_id+1})[0]['magic-num']
+
 @route('/new', method='GET')
 def get_new_id():
     next_id = m.next_id()
     m.placeholder(next_id)
-    return {'_id': next_id}
+    if m.has_following(next_id):
+        return {'_id': next_id,
+                'lmn:': m.get_lmn(next_id)
+                }
+    else :
+        return {'_id': next_id}
 
 @route('/insert', method='PUT')
 def insert():
@@ -77,5 +88,5 @@ def insert():
 
 if __name__ == '__main__':
     m = Master()
-    m.freq()
+    #m.freq()
     run(host='129.25.163.19', port=80)
