@@ -16,16 +16,23 @@ class Master :
     mins = None
 
     def __init__(self) :
+        if len(sys.argv) != 2 :
+            print "Please provide a start number"
+            sys.exit(1)
         self.db = MongoClient().ppa.ticket
         #self.min_id = self.db.find().sort([('_id', 1)]).limit(1)[0]['_id'] - 1
         #self.max_id = self.db.find().sort([('_id', -1)]).limit(1)[0]['_id'] + 1
         self.min_id = 58536288
         self.max_id = 58536803 # max as of 1/23 6PM
         self.mins = True
-        self.start = 58533800
-        self.i = 0
-        print "%s: %d" % ("Next max", self.max_id)
-        print "%s: %d" % ("Next min", self.min_id)
+
+        self.i = (int(sys.argv[1]) % 1000) % 200
+        self.start = (int(sys.argv[1])) - self.i
+        print "%s: %d" % ("Next ID", self.start + self.i + 1)
+        self.miss_count = 0
+        self.db.remove({'placeholder':True})
+#        print "%s: %d" % ("Next max", self.max_id)
+#        print "%s: %d" % ("Next min", self.min_id)
 
     def insert(self, data) :
         print "%s %s" % ("Inserting", data['_id'])
@@ -42,6 +49,8 @@ class Master :
                 entity['issueTime'] = datetime.strptime(issueTime, "%m/%d/%Y %I:%M%p")
         except KeyError :
             entity['missing'] = entity['missing'] == 'True'
+        except ValueError :
+            entity['issueTime'] = False
         self.db.save(entity)
 
     def set_placeholder(self, _id) :
@@ -57,7 +66,19 @@ class Master :
         else :
             self.i = 1
             self.start = self.start - 200
+            self.miss_count = 0
             return self.i + self.start
+
+    def clear_missing(self):
+        self.miss_count = 0
+
+    def found_missing(self):
+        self.miss_count = self.miss_count + 1
+        if self.miss_count >= 5 :
+            print "Found 5 missing, leaving this block"
+            self.miss_count = 0
+            self.i = 0
+            self.start = self.start - 200
 
     ''' # Using min/max
         if self.mins:
@@ -99,13 +120,18 @@ def get_new_id():
     next_id = m.next_id()
     m.set_placeholder(next_id)
     return {'_id': next_id,
-            'lmn': m.get_lmn(next_id)
+            'lmn': m.get_lmn(next_id),
             'pmn': m.get_pmn(next_id)
             }
 
 @route('/insert', method='PUT')
 def insert():
     data = request.forms
+    try :
+        if data['missing'] :
+            m.found_missing()
+    except :
+        m.clear_missing()
     m.insert(data)
 
 if __name__ == '__main__':
