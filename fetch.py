@@ -62,8 +62,13 @@ def fetch(_id, magic_num, secs=5) :
         return False, None
 
 # Fetching a ticket when we don't know the magic-number
-def fetch_range(_id) :
-    for magic_num in [9, 0, 1, 4, 8, 3, 7, 5, 6, 2] :
+def fetch_range(_id, lmn=None) :
+    range = []
+    if lmn is None :
+        _range = [9, 1, 0, 8, 4, 6, 7, 3, 2, 5]
+    else :
+        _range = [(lmn-8)%10, (lmn-7)%10, (lmn-6)%10]
+    for magic_num in _range :
         valid, r = fetch(_id, magic_num)
         if valid :
             return r
@@ -72,3 +77,4 @@ def fetch_range(_id) :
             "_id" : int(_id),
             "missing" : True
         }
+
