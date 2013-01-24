@@ -14,8 +14,8 @@ def insert(data):
     requests.put(master + "/insert", data)
 
 while True :
-    _id,lmn = new()
+    _id,lmn,pmn = new()
     print "%s %d" % ("Trying", _id)
-    data = fetch.fetch_range(_id, lmn)
+    data = fetch.fetch_range(_id, lmn, pmn)
     print data
     insert(data)
