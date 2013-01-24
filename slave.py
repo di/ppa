@@ -8,11 +8,7 @@ master = "http://129.25.163.19"
 def new() :
     resp = requests.get(master + "/new").json() 
     print resp
-    lmn = resp['lmn']
-    if lmn is None :
-        return resp['_id'], None 
-    else :
-        return resp['_id'], int(resp['lmn'])
+    return resp['_id'], resp['lmn'], resp['pmn']
 
 def insert(data):
     requests.put(master + "/insert", data)

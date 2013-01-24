@@ -22,6 +22,8 @@ class Master :
         self.min_id = 58536288
         self.max_id = 58536803 # max as of 1/23 6PM
         self.mins = True
+        self.start = 58533800
+        self.i = 0
         print "%s: %d" % ("Next max", self.max_id)
         print "%s: %d" % ("Next min", self.min_id)
 
@@ -42,13 +44,22 @@ class Master :
             entity['missing'] = entity['missing'] == 'True'
         self.db.save(entity)
 
-    def placeholder(self, _id) :
+    def set_placeholder(self, _id) :
         try :
             self.db.insert({'_id':int(_id),'placeholder':True})
         except DuplicateKeyError :
             print "Already inserted this one..."
 
     def next_id(self):
+        if self.i < 200 :
+            self.i = self.i + 1
+            return self.i + self.start
+        else :
+            self.i = 1
+            self.start = self.start - 200
+            return self.i + self.start
+
+    ''' # Using min/max
         if self.mins:
             while m.db.find({'_id':self.min_id}).count() :
                 self.min_id = self.min_id - 1
@@ -57,33 +68,40 @@ class Master :
             while m.db.find({'_id':self.max_id}).count() :
                 self.max_id = self.max_id + 1
             return self.max_id
-
-    def freq(self):
-        f = dict()
-        for i in range(0,10):
-            f[i] = self.db.find({'magic-num':i}).count()
-        print sorted(f, key=f.__getitem__, reverse=True)
+    '''
 
     def has_following(self, next_id) :
         return self.db.find({'_id':next_id+1, 'placeholder':{'$exists':False}}).count()
 
+    def has_preceding(self, next_id) :
+        return self.db.find({'_id':next_id-1, 'placeholder':{'$exists':False}}).count()
+
     def get_lmn(self, next_id) :
-        try :
-            return self.db.find({'_id':next_id+1})[0]['magic-num']
-        except :
+        if self.has_following(next_id) :
+            try :
+                return self.db.find({'_id':next_id+1})[0]['magic-num']
+            except :
+                return None
+        else :
+            return None
+
+    def get_pmn(self, next_id) :
+        if self.has_preceding(next_id) :
+            try :
+                return self.db.find({'_id':next_id-1})[0]['magic-num']
+            except :
+                return None
+        else :
             return None
 
 @route('/new', method='GET')
 def get_new_id():
     next_id = m.next_id()
-    m.placeholder(next_id)
-    print m.has_following(next_id)
-    if m.has_following(next_id):
-        return {'_id': next_id,
-                'lmn': m.get_lmn(next_id)
-                }
-    else :
-        return {'_id': next_id}
+    m.set_placeholder(next_id)
+    return {'_id': next_id,
+            'lmn': m.get_lmn(next_id)
+            'pmn': m.get_pmn(next_id)
+            }
 
 @route('/insert', method='PUT')
 def insert():
@@ -92,5 +110,4 @@ def insert():
 
 if __name__ == '__main__':
     m = Master()
-    #m.freq()
     run(host='129.25.163.19', port=80)
