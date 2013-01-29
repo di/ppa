@@ -16,20 +16,30 @@ class Master :
     mins = None
 
     def __init__(self) :
-        if len(sys.argv) != 2 :
-            print "Please provide a start number"
-            sys.exit(1)
         self.db = MongoClient().ppa.ticket
+        self.starter = None
+        if len(sys.argv) == 2 :
+            self.starter = int(sys.argv[1]) - 1
+        else :
+            try :
+                self.starter = int(self.db.find({'placeholder':True}).sort([('_id',1)]).limit(1)[0]['_id']) - 1
+                print "Using placeholder"
+            except :
+                print "No placeholder, no arg. Please provide a start number"
+                sys.exit(1)
         #self.min_id = self.db.find().sort([('_id', 1)]).limit(1)[0]['_id'] - 1
         #self.max_id = self.db.find().sort([('_id', -1)]).limit(1)[0]['_id'] + 1
         self.min_id = 58536288
         self.max_id = 58536803 # max as of 1/23 6PM
         self.mins = True
 
-        self.i = (int(sys.argv[1]) % 1000) % 200
-        self.start = (int(sys.argv[1])) - self.i
+        self.i = ((self.starter % 1000) % 200)
+        self.start = self.starter - self.i
         print "%s: %d" % ("Next ID", self.start + self.i + 1)
+        print "%s: %d" % ("Start", self.start)
+        print "%s: %d" % ("i", self.i)
         self.miss_count = 0
+
         self.db.remove({'placeholder':True})
 #        print "%s: %d" % ("Next max", self.max_id)
 #        print "%s: %d" % ("Next min", self.min_id)
@@ -56,7 +66,7 @@ class Master :
     def set_placeholder(self, _id) :
         try :
             self.db.insert({'_id':int(_id),'placeholder':True})
-        except DuplicateKeyError :
+        except :
             print "Already inserted this one..."
 
     def next_id(self):
@@ -65,7 +75,7 @@ class Master :
             return self.i + self.start
         else :
             self.i = 1
-            self.start = self.start - 200
+            self.start = self.start + 200
             self.miss_count = 0
             return self.i + self.start
 
@@ -78,7 +88,7 @@ class Master :
             print "Found 5 missing, leaving this block"
             self.miss_count = 0
             self.i = 0
-            self.start = self.start - 200
+            self.start = self.start + 200
 
     ''' # Using min/max
         if self.mins:
