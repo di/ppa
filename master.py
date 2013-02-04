@@ -63,8 +63,9 @@ class Master :
             entity['issueTime'] = False
         self.db.ticket.save(entity)
         try :
-            togeo = {'location':entity['location']}
-            self.db.togeo.save(togeo)
+            nice = fetch.make_nice(entity['location'])
+            if self.db.location.find({'text':nice}).count() == 0 :
+                self.db.location.save({'text':nice, 'checked':False})
         except KeyError :
             pass
 

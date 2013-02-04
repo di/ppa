@@ -3,6 +3,7 @@
 import requests
 import time
 import sys
+import re
 from bs4 import BeautifulSoup
 
 url = "https://wmq.etimspayments.com/pbw/onlineDisputeAction.doh"
@@ -21,6 +22,10 @@ headers = {
     "Referer":"https://wmq.etimspayments.com/pbw/confirmAgreementAction.doh",
     "User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_6_8) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.52 Safari/537.17",
 }
+
+words = ["NS", "WS", "ES", "SS", "OPP", "UNIT", "UNT", "UNITN", "UNITBLK",
+         "UNTI", "UNITE", "UNIN", "UNIIT", "UNI", "VNIT", "BLK", "PP", "OPT",
+         "OP", "ONIT", "NIT", "BL", "BK", "BLKE", "BRK", "LK", "B", "0PP"]
 
 # Fetching a specific ticket when we know the magic-number
 def fetch(_id, magic_num, secs=5) :
@@ -84,3 +89,16 @@ def fetch_range(_id, lmn=None, pmn=None) :
             "missing" : True
         }
 
+def make_nice(location) :
+    # Separates numbers from a letter (like "10S Market")
+    location = re.sub(r'(\d+)([a-zA-Z]{1}[$|\s])', r'\1 \2', location)
+    # Separates numbers from a word (like "10Market")
+    location = re.sub(r'(\d+)([a-zA-Z]{3,}[$|\s])', r'\1 \2', location)
+    # Separates a letter from a number (like "S10 Market")
+    location = re.sub(r'([a-zA-Z]{1})(\d+[$|\s])', r'\1 \2', location)
+    # Separates words from a number (like "OPP1500")
+    location = re.sub(r'([a-zA-Z]{3,})(\d+[$|\s])', r'\1 \2', location)
+    for word in words :
+        # Removes words from the location
+        location = re.sub(r'(\s|^)' + word + r'(\s|$)', u' ', location)
+    return location.strip() + " PHILADELPHIA PA"
