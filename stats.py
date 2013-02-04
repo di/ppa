@@ -5,6 +5,17 @@ import sys
 from pymongo import MongoClient
 
 db = MongoClient().ppa.ticket
+for loc in db.distinct('location'):
+    print loc
+sys.exit(1)
+
+''' Getting the count for each date
+
+for date in sorted(db.distinct('issueDate')):
+    print "%s: %s" % (date, db.find({'issueDate':date}).count())
+
+'''
+
 min_id = db.find().sort([('_id', 1)]).limit(1)[0]['_id'] - 1
 max_id = db.find().sort([('_id', -1)]).limit(1)[0]['_id'] + 1
 i = (min_id % 1000) % 200
@@ -47,5 +58,3 @@ print "%s:\t%d" % ("Resolved", _resolved)
 print "%s:\t%d" % ("Unresolved", _unresolved)
 print "%s:\t%d" % ("Missing", _missing)
 print "%s:\t\t%d" % ("Total", _total)
-
-
