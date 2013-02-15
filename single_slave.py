@@ -4,12 +4,8 @@ import fetch
 import requests
 import sys
 
-master = "http://129.25.163.19"
+master = "http://129.25.163.19:8080"
 
-_id = sys.argv[1]
-num = int(_id[:8])
-mnum = int(_id[-1])
-print "%s %d-%d" % ("Trying", num, mnum)
-valid, data = fetch.fetch(num, mnum)
+data = fetch.fetch_range(int(sys.argv[1]))
 print data
 requests.put(master + "/insert", data)
