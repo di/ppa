@@ -14,6 +14,7 @@ class Master :
     min_id = None
     max_id = None
     mins = None
+    cur_checks = 1
 
     def __init__(self) :
         self.db = MongoClient().ppa
@@ -45,7 +46,7 @@ class Master :
 #        print "%s: %d" % ("Next min", self.min_id)
 
     def insert(self, data) :
-        print "%s %s" % ("Inserting", data['_id'])
+        print "%s %s (cc=%d)" % ("Inserting", data['_id'], self.cur_checks)
         entity = dict()
         for field in data.keys() :
             entity[field] = data.get(field)
@@ -86,8 +87,42 @@ class Master :
             return self.i + self.start
 
     def missing_id(self):
-        _id = int(self.db.ticket.find({'$or':[{'missing':True,'checks':{'$gte':0},'checked':{'$lte':datetime.now()-timedelta(hours=24)}},{'placeholder':True}]}).sort([('_id',1)]).limit(1)[0]['_id'])
-        return _id
+        while 0 == self.db.ticket.find({
+            '$or':[{
+                'missing':True,
+                'checks':{
+                    '$gte':0,
+                    '$lte':self.cur_checks
+                },
+                'checked':{
+                    '$lte':datetime.now()-timedelta(hours=24)
+                }
+            },{
+                'placeholder':True
+            }]
+        }).count() :
+            self.cur_checks += 1
+            print "%s %d" % ("Incrementing checks to count to ", self.cur_checks)
+        if self.cur_checks < 4 :
+            _id = int(self.db.ticket.find({
+                '$or':[{
+                    'missing':True,
+                    'checks':{
+                        '$gte':0,
+                        '$lte':self.cur_checks
+                    },
+                    'checked':{
+                        '$lte':datetime.now()-timedelta(hours=24)
+                    }
+                },{
+                    'placeholder':True
+                }]
+            }).sort([('_id',1)]).limit(1)[0]['_id'])
+            return _id
+        else :
+            print "Only 5+ missing checks remain"
+            sys.exit(1)
+
 
     def clear_missing(self):
         self.miss_count = 0
@@ -156,9 +191,9 @@ def get_new_id():
 def get_missing_id():
     missing_id = m.missing_id()
     print "%s: %d" % ("Serving missing id", missing_id)
-    while m.has_non_missing_following(missing_id) :
-        m.mark_permanently_missing(missing_id)
-        missing_id = m.missing_id()
+    #while m.has_non_missing_following(missing_id) :
+    #    m.mark_permanently_missing(missing_id)
+    #    missing_id = m.missing_id()
     return {'_id': missing_id,
             'lmn': m.get_lmn(missing_id),
             'pmn': m.get_pmn(missing_id)
@@ -170,7 +205,7 @@ def insert():
     _id = int(data['_id'])
     skip = False
     # We got a result back, and it's still missing
-    if data.get('missing', False) :
+    if data.get('missing', 'False') == 'True' :
         print "%s: %d (%d)" % ("Still missing", _id, m.miss_count)
         m.db.ticket.update({'_id':_id}, {'$inc':{'checks':1},'$set':{'checked':datetime.now(),'missing':True},'$unset':{'placeholder':1}})
         skip = m.found_missing()
