@@ -1,21 +1,19 @@
 #!/usr/bin/python
 
+import sys
 import fetch
 import requests
 
-master = "http://129.25.163.19:8080"
-
-def new() :
-    resp = requests.get(master + "/new").json() 
-    print resp
-    return resp['_id'], resp['lmn'], resp['pmn']
-
-def insert(data):
-    requests.put(master + "/insert", data)
+master = "http://localhost:8080"
 
 while True :
-    _id,lmn,pmn = new()
-    print "%s %d" % ("Trying", _id)
-    data = fetch.fetch_range(_id, lmn, pmn)
-    print data
-    insert(data)
+    try :
+        resp = requests.get(master + "/missing").json() 
+        print resp
+        print "%s %d" % ("Trying", resp['_id'])
+        data = fetch.fetch_range(resp['_id'], resp['lmn'], resp['pmn'])
+        print data
+        requests.put(master + "/insert_missing", data)
+    except requests.exceptions.ConnectionError :
+        print "It seems like the master is not running. Exiting."
+        sys.exit(1)

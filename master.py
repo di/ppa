@@ -4,7 +4,6 @@ import fetch
 import json
 import sys
 from bottle import route, run, request#, response, abort, template, redirect
-from daemon import Daemon
 from pymongo import MongoClient
 from datetime import datetime,timedelta
 
@@ -23,8 +22,7 @@ class Master :
                 self.starter = int(self.db.ticket.find({'placeholder':True}).sort([('_id',1)]).limit(1)[0]['_id']) - 1
                 print "Using placeholder"
             except :
-                print "No placeholder, no arg. Please provide a start number"
-                sys.exit(1)
+                self.starter = 0
 
         self.i = ((self.starter % 1000) % 200)
         self.start = self.starter - self.i
