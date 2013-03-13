@@ -11,9 +11,6 @@ from datetime import datetime,timedelta
 class Master :
 
     db = None
-    min_id = None
-    max_id = None
-    mins = None
     cur_checks = 1
 
     def __init__(self) :
@@ -28,11 +25,6 @@ class Master :
             except :
                 print "No placeholder, no arg. Please provide a start number"
                 sys.exit(1)
-        #self.min_id = self.db.ticket.find().sort([('_id', 1)]).limit(1)[0]['_id'] - 1
-        #self.max_id = self.db.ticket.find().sort([('_id', -1)]).limit(1)[0]['_id'] + 1
-        self.min_id = 58536288
-        self.max_id = 58536803 # max as of 1/23 6PM
-        self.mins = True
 
         self.i = ((self.starter % 1000) % 200)
         self.start = self.starter - self.i
@@ -40,10 +32,6 @@ class Master :
         print "%s: %d" % ("Start", self.start)
         print "%s: %d" % ("i", self.i)
         self.miss_count = 0
-
-        #self.db.ticket.remove({'placeholder':True})
-#        print "%s: %d" % ("Next max", self.max_id)
-#        print "%s: %d" % ("Next min", self.min_id)
 
     def insert(self, data) :
         print "%s %s (cc=%d)" % ("Inserting", data['_id'], self.cur_checks)
@@ -62,6 +50,7 @@ class Master :
             entity['missing'] = entity['missing'] == 'True'
         except ValueError :
             entity['issueTime'] = False
+            entity['resolved'] = True
         self.db.ticket.save(entity)
         try :
             nice = fetch.make_nice(entity['location'])
@@ -103,7 +92,7 @@ class Master :
         }).count() :
             self.cur_checks += 1
             print "%s %d" % ("Incrementing checks to count to ", self.cur_checks)
-        if self.cur_checks < 4 :
+        if self.cur_checks < 5 :
             _id = int(self.db.ticket.find({
                 '$or':[{
                     'missing':True,
@@ -123,7 +112,6 @@ class Master :
             print "Only 5+ missing checks remain"
             sys.exit(1)
 
-
     def clear_missing(self):
         self.miss_count = 0
 
@@ -137,22 +125,8 @@ class Master :
             return True
         return False
 
-    ''' # Using min/max
-        if self.mins:
-            while m.db.find({'_id':self.min_id}).count() :
-                self.min_id = self.min_id - 1
-            return self.min_id
-        else:
-            while m.db.find({'_id':self.max_id}).count() :
-                self.max_id = self.max_id + 1
-            return self.max_id
-    '''
     def has_non_missing_following(self, _id) :
         return self.db.ticket.find({'_id':_id+1, 'missing':{'$exists':False},'placeholder':{'$exists':False}}).count() or self.db.ticket.find({'_id':_id+1, 'checks':-1}).count()
-
-    def mark_permanently_missing(self, _id) :
-        print "%s: %d" % ("Permanently missing", _id)
-        self.db.ticket.update({'_id':_id},{'$set':{'checked':datetime.now(),'checks':-1},'$unset':{'placeholder':1}})
 
     def has_following(self, next_id) :
         return self.db.ticket.find({'_id':next_id+1, 'placeholder':{'$exists':False}}).count()
@@ -191,9 +165,6 @@ def get_new_id():
 def get_missing_id():
     missing_id = m.missing_id()
     print "%s: %d" % ("Serving missing id", missing_id)
-    #while m.has_non_missing_following(missing_id) :
-    #    m.mark_permanently_missing(missing_id)
-    #    missing_id = m.missing_id()
     return {'_id': missing_id,
             'lmn': m.get_lmn(missing_id),
             'pmn': m.get_pmn(missing_id)
@@ -233,4 +204,4 @@ def insert():
 
 if __name__ == '__main__':
     m = Master()
-    run(host='129.25.163.19', port=8080)
+    run(host='localhost', port=8080)

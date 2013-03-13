@@ -62,7 +62,7 @@ def fetch(_id, magic_num, secs=5) :
     elif "unavailable" in soup.find_all("li", attrs={'class':'error'})[0].text.strip() :
         print "%s %d %s" % ("Oops, we brought it down, backing off for", secs, "seconds...")
         time.sleep(secs)
-        return fetch(_id, magic_num, secs*2) 
+        return fetch(_id, magic_num, secs*2)
     else :
         return False, None
 
